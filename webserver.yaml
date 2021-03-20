@@ -1,0 +1,47 @@
+- hosts: web
+  tasks:
+        - name: install_yum
+          yum:
+            name: yum-utils
+            state: latest
+        - name: install device-mapper persistant data
+          yum:
+            name: device-mapper-persistent-data
+            state: latest
+        - name: install lvm2
+          yum:
+            name: lvm2
+            state: latest
+        - name: Add docker_repo
+          yum_repository:
+            name: docker
+            description: download.docker.com_linux_centos_7_x86_64_stable_
+            file: download.docker.com_linux_centos_7_x86_64_stable_
+            baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+            gpgcheck: no
+            enabled: yes
+        - name: Install Docker
+          command: "yum install --nobest docker-ce -y"
+        - name: start docker
+          service:
+            name: "docker"
+            state: started
+            enabled: yes
+          become: yes
+        - name: install docker on host
+          shell: "pip3 install docker"
+        - name: pull httpd image
+          docker_image:
+            name: httpd
+            source: pull
+        - name: Run container
+          docker_container:
+            name: webserver
+            image: httpd
+            interactive: yes
+            state: started
+            volumes:
+              - "/var/www/html/:/usr/local/apache2/htdocs/:ro"
+            ports:
+              - "6379:80"
+            command: httpd -D FOREGROUND
